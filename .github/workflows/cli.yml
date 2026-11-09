@@ -1,0 +1,51 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: mineru-cli-test
+on:
+  push:
+    branches:
+      - "master"
+      - "dev"
+    paths-ignore:
+      - "cmds/**"
+      - "**.md"
+
+jobs:
+  cli-test:
+    if: github.repository == 'GilesRutherford/MinerU-mini-swe-agent'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out development branch
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Create and activate virtual environment
+        run: |
+          uv venv --python 3.10
+          source .venv/bin/activate
+          uv pip install -e ".[test]"
+
+      - name: Clean coverage data
+        run: |
+          source .venv/bin/activate
+          python tests/clean_coverage.py
+
+      - name: Run tests with coverage
+        run: |
+          source .venv/bin/activate
+          coverage run -m pytest tests/unittest/test_e2e.py
+
+      - name: Process coverage results
+        run: |
+          source .venv/bin/activate
+          python tests/get_coverage.py
